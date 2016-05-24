@@ -21,6 +21,11 @@ namespace Warehouse.Implementation
         #endregion
 
         #region CTOR
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="connectionString">Connection string of the Azure Document DB</param>
+        /// <param name="primaryKey">Primary key of Azure Document DB</param>
         public Warehouse(string connectionString, string primaryKey)
             : this(new DocumentClient(new Uri(connectionString), primaryKey))
         {
@@ -48,7 +53,7 @@ namespace Warehouse.Implementation
         /// Deletes a JSON document
         /// </summary>
         /// <param name="Id">Id of the odcument to be deleted</param>
-        public async void Delete(string Id)
+        public async Task Delete(string Id)
         {
             try
             {
@@ -77,6 +82,30 @@ namespace Warehouse.Implementation
                 if(de.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     return default(T);
+                }
+                else
+                {
+                    throw de;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Retrieves all documents within a collection
+        /// </summary>
+        /// <returns>List of objects</returns>
+        public List<T> GetAll()
+        {
+            try
+            {
+                var docuements = _client.CreateDocumentQuery<T>(UriFactory.CreateDocumentCollectionUri(_dbName, _collection));
+                return docuements.ToList(); ;
+            }
+            catch (DocumentClientException de)
+            {
+                if (de.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return null;
                 }
                 else
                 {
@@ -118,7 +147,7 @@ namespace Warehouse.Implementation
         /// </summary>
         /// <param name="obj">Object to be stored</param>
         /// <param name="Id">Id of the object</param>
-        public async void Store(T obj, string Id)
+        public async Task Store(T obj, string Id)
         {
             try
             {
@@ -142,7 +171,7 @@ namespace Warehouse.Implementation
         /// </summary>
         /// <param name="obj">new JSON to be stored</param>
         /// <param name="Id">Id of the object to update</param>
-        public async void Update(T obj, string Id)
+        public async Task Update(T obj, string Id)
         {
             try
             {
