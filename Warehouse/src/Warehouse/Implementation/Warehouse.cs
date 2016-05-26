@@ -182,6 +182,15 @@ namespace Warehouse.Implementation
                 throw de;
             }
         }
+
+        /// <summary>
+        /// Deletes all documents within a collection
+        /// </summary>
+        /// <returns></returns>
+        public async Task CleanCollection()
+        {
+            await _client.DeleteDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(_dbName, _collection));
+        }
         #endregion
 
         #region Private Methods

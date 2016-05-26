@@ -49,5 +49,10 @@ namespace Warehouse.Interfaces
         /// <param name="obj">new JSON to be stored</param>
         /// <param name="Id">Id of the object to update</param>
         Task Update(T obj, string Id);
+        /// <summary>
+        /// Deletes all documents within a collection
+        /// </summary>
+        /// <returns></returns>
+        Task CleanCollection();
     }
 }
