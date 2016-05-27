@@ -43,10 +43,13 @@ namespace Warehouse.Implementation
         /// </summary>
         /// <param name="dbName">Database name to connect to</param>
         /// <param name="collection">Collection to connect to</param>
-        public void Initialize(string dbName, string collection)
+        public async Task Initialize(string dbName, string collection)
         {
             _dbName = dbName;
             _collection = collection;
+
+            await CreateDBIfNotExists();
+            await CreateDocumentCollectionIfNotExists();
         }
 
         /// <summary>
@@ -75,7 +78,7 @@ namespace Warehouse.Implementation
             try
             {
                 var document = await  _client.ReadDocumentAsync(UriFactory.CreateDocumentUri(_dbName, _collection, Id));
-                return (T)(dynamic)document;
+                return (T)(dynamic)document.Resource;
             }
             catch (DocumentClientException de)
             {
@@ -99,7 +102,7 @@ namespace Warehouse.Implementation
             try
             {
                 var docuements = _client.CreateDocumentQuery<T>(UriFactory.CreateDocumentCollectionUri(_dbName, _collection));
-                return docuements.ToList(); ;
+                return docuements.ToList();
             }
             catch (DocumentClientException de)
             {
@@ -147,17 +150,20 @@ namespace Warehouse.Implementation
         /// </summary>
         /// <param name="obj">Object to be stored</param>
         /// <param name="Id">Id of the object</param>
-        public async Task Store(T obj, string Id)
+        /// <returns>Id of element created</returns>
+        public async Task<string> Store(T obj, string Id)
         {
             try
             {
-                await _client.ReadDocumentAsync(UriFactory.CreateDocumentUri(_dbName, _collection, Id));
+                var response = await _client.ReadDocumentAsync(UriFactory.CreateDocumentUri(_dbName, _collection, Id));
+                return response.Resource.Id;
             }
             catch (DocumentClientException de)
             {
                 if(de.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    await _client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(_dbName, _collection), obj);
+                    var response = await _client.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(_dbName, _collection), obj);
+                    return response.Resource.Id;
                 }
                 else
                 {
@@ -211,6 +217,10 @@ namespace Warehouse.Implementation
                     throw de;
                 }
             }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         private async Task CreateDocumentCollectionIfNotExists()
@@ -233,7 +243,10 @@ namespace Warehouse.Implementation
                         new DocumentCollection { Id = _collection },
                         new RequestOptions { OfferThroughput = 400 });
                 }
-                throw;
+                else
+                {
+                    throw;
+                }
             }
         }
         #endregion

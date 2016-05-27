@@ -14,7 +14,7 @@ namespace Warehouse.Interfaces
         /// </summary>
         /// <param name="dbName">Database name to connect to</param>
         /// <param name="collection">Collection to connect to</param>
-        void Initialize(string dbName, string collection);
+        Task Initialize(string dbName, string collection);
         /// <summary>
         /// Retrive just one JSON document
         /// </summary>
@@ -37,7 +37,7 @@ namespace Warehouse.Interfaces
         /// </summary>
         /// <param name="obj">Object to be stored</param>
         /// <param name="Id">Id of the object</param>
-        Task Store(T obj, string Id);
+        Task<string> Store(T obj, string Id);
         /// <summary>
         /// Deletes a JSON document
         /// </summary>
