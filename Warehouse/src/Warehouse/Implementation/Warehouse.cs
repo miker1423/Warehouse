@@ -18,6 +18,7 @@ namespace Warehouse.Implementation
         private string _dbName;
         private string _collection;
         private DocumentClient _client;
+        private string _partitionKey;
         #endregion
 
         #region CTOR
@@ -50,6 +51,16 @@ namespace Warehouse.Implementation
 
             await CreateDBIfNotExists();
             await CreateDocumentCollectionIfNotExists();
+        }
+
+        public async Task Initialize(string dbName, string collection, string partitionKey)
+        {
+            _dbName = dbName;
+            _collection = collection;
+            _partitionKey = partitionKey;
+
+            await CreateDBIfNotExists();
+            await CreateDocumentCollectionWithPartitionKeyIfNotExists();
         }
 
         /// <summary>
@@ -237,7 +248,7 @@ namespace Warehouse.Implementation
                     colletionInfo.Id = _collection;
 
                     colletionInfo.IndexingPolicy = new IndexingPolicy(new RangeIndex(DataType.String) { Precision = -1 });
-
+                    
                     await _client.CreateDocumentCollectionAsync(
                         UriFactory.CreateDatabaseUri(_dbName),
                         new DocumentCollection { Id = _collection },
@@ -248,6 +259,38 @@ namespace Warehouse.Implementation
                     throw;
                 }
             }
+        }
+
+        private async Task CreateDocumentCollectionWithPartitionKeyIfNotExists()
+        {
+            try
+            {
+                await _client.ReadDocumentCollectionAsync(UriFactory.CreateDocumentCollectionUri(_dbName, _collection));
+            }
+            catch (DocumentClientException de)
+            {
+                if (de.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    var colletionInfo = new DocumentCollection();
+                    colletionInfo.Id = _collection;
+
+                    colletionInfo.IndexingPolicy = new IndexingPolicy(new RangeIndex(DataType.String) { Precision = -1 });
+
+                    var collection = new DocumentCollection();
+                    collection.Id = _collection;
+                    collection.PartitionKey.Paths.Add(_partitionKey);
+
+                    await _client.CreateDocumentCollectionAsync(
+                        UriFactory.CreateDatabaseUri(_dbName),
+                        collection,
+                        new RequestOptions { OfferThroughput = 400 });
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
         }
         #endregion
     }
